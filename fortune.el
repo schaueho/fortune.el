@@ -1,9 +1,6 @@
-;;; -*- Mode: Emacs-Lisp -*- 
 ;;; fortune.el --- Use fortune to create signatures
-;;; Revision: 1.0
-;;; $Id: fortune.el,v 1.1 1999-04-06 14:24:50+02 schauer Exp schauer $
+;; Copyright (C) 1999 Free Software Foundation, Inc.
 
-;; Copyright (C) 1999 by Holger Schauer
 ;; Author: Holger Schauer <Holger.Schauer@gmx.de>
 ;; Keywords: games utils mail
 
@@ -36,14 +33,6 @@
 
 ;;; Installation:
 
-;; .. is easy as in most cases.  Add this file to where your
-;; Emacs can find it and add
-;;(autoload 'fortune "fortune" nil t)
-;;(autoload 'fortune-add-fortune "fortune" nil t)
-;;(autoload 'fortune-from-region "fortune" nil t)
-;;(autoload 'fortune-compile "fortune" nil t)
-;;(autoload 'fortune-to-signature "fortune" nil t)
-;; to your .emacs.
 ;; Please check the customize settings - you will at least have to modify the
 ;; values of `fortune-dir' and `fortune-file'.
 
@@ -68,26 +57,8 @@
 ;; which allows marking a region and then pressing "i" so that the marked 
 ;; region will be automatically added to my favourite fortune-file.
 
+;;; Revision: $Id: $
 ;;; Code:
-
-;;; **************
-;;; Preliminaries
-;; Incantations to make custom stuff work without customize, e.g. on
-;; XEmacs 19.14 or GNU Emacs 19.34.  Stolen from htmlize.el by Hrovje Niksic.
-(eval-and-compile
-  (condition-case ()
-      (require 'custom)
-    (error nil))
-  (if (and (featurep 'custom) (fboundp 'custom-declare-variable))
-      nil ;; We've got what we needed
-    ;; We have the old custom-library, hack around it!
-    (defmacro defgroup (&rest args)
-      nil)
-    (defmacro defcustom (var value doc &rest args) 
-      (` (defvar (, var) (, value) (, doc))))
-    (defmacro defface (face value doc &rest stuff)
-      `(make-face ,face))))
-
 
 ;;; **************
 ;;; Customizable Settings
@@ -100,7 +71,7 @@
   :group 'mail)
 
 (defcustom fortune-dir "~/docs/ascii/misc/fortunes/"
-  "*A directory where to look for local fortune cookies files."
+  "*The directory to look in for local fortune cookies files."
   :group 'fortune)
 (defcustom fortune-file 
   (expand-file-name "usenet" fortune-dir)
@@ -123,17 +94,20 @@ Normally you won't have a reason to change it."
   "Options to pass to the strfile program."
   :group 'fortune)
 (defcustom fortune-quiet-strfile-options "> /dev/null"
-  "How to supress output of strfile.
-Set this to \"\" if you would like to see its results."
+  "Text added to the command for running `strfile'.
+By default it discards the output produced by `strfile'.
+Set this to \"\" if you would like to see the output."
   :group 'fortune)
+
 (defcustom fortune-always-compile t
-  "*If set to nil, you must invoke `fortune-compile' manually."
+  "*Non-nil means automatically compile fortune files.
+If nil, you must invoke `fortune-compile' manually to do that."
   :group 'fortune)
 (defcustom fortune-author-line-prefix "                  -- "
-  "Prefix after which the name of the author will be set."
+  "Prefix to put before the author name of a fortunate."
   :group 'fortune-signature)
 (defcustom fortune-fill-column fill-column
-  "Fill column after VALUE is reached."
+  "Fill column for fortune files."
   :group 'fortune-signature)
 (defcustom fortune-from-mail "private e-mail"
   "String to use to characterize that the fortune comes from an e-mail.
@@ -141,10 +115,10 @@ No need to add an `in'."
   :type 'string
   :group 'fortune-signature)
 (defcustom fortune-sigstart ""
-  "*A fixed part to be added before the fortune cookie in the signature."
+  "*Some text to insert before the fortune cookie, in a mail signature."
   :group 'fortune-signature)
 (defcustom fortune-sigend ""
-  "*A fixed part to be append after the fortune cookie in the signature."
+  "*Some text to insert after the fortune cookie, in a mail signature."
   :group 'fortune-signature)
 
 
@@ -158,8 +132,7 @@ No need to add an `in'."
 (defun fortune-append (string &optional interactive file)
   "Appends STRING to the fortune FILE. 
 
-Expects STRING to be enclosed in quotes.  When used INTERACTIVE
-doesn't compile the fortune file afterwards."
+If INTERACTIVE is non-nil, don't compile the fortune file afterwards."
   (setq file (expand-file-name 
 	      (substitute-in-file-name (or file fortune-file))))
   (if (file-directory-p file)
@@ -186,26 +159,27 @@ doesn't compile the fortune file afterwards."
    (read-file-name
     "Fortune file to use: "
     fortune-dir nil nil "")))
-	
 
 ;;; ###autoload
-(defun fortune-add-fortune (string)
-  "Interactively adds STRING to a fortune file.
+(defun fortune-add-fortune (string file)
+  "Add STRING to a fortune file FILE.
 
-Expects STRING to be enclosed in quotes.  If called with a prefix asks for the
-file to write the fortune to, otherwise uses the value of `fortune-file'."
-  (interactive "sFortune: ")
-  (if current-prefix-arg
-      (fortune-append string t (fortune-ask-file))
-    (fortune-append string t)))
+Interactively, if called with a prefix argument,
+read the file name to use.  Otherwise use the value of `fortune-file'."
+  (interactive
+   (list (read-string "Fortune: ")
+	 (if current-prefix-arg (fortune-ask-file))))
+  (fortune-append string t file))
 
 ;;; ###autoload
-(defun fortune-from-region (beg end)
+(defun fortune-from-region (beg end file)
   "Appends the current region to a local fortune-like data file.  
 
-If called with a prefix asks for the FILE to write the fortune to,
-otherwise uses the value of `fortune-file'."
-  (interactive "r")
+Interactively, if called with a prefix argument,
+read the file name to use.  Otherwise use the value of `fortune-file'."
+  (interactive 
+   (list (region-beginning) (region-end)
+	 (if current-prefix-arg (fortune-ask-file))))
   (let ((string (buffer-substring beg end))
 	author newsgroup help-point)
     ;; try to determine author ...
@@ -238,9 +212,7 @@ otherwise uses the value of `fortune-file'."
 			 "\n"
 			 fortune-author-line-prefix
 			 author " in " newsgroup))
-    (if current-prefix-arg
-	(fortune-append string t (fortune-ask-file))
-      (fortune-append string t))))
+    (fortune-append string t file)))
 
 
 ;;; **************
@@ -250,7 +222,7 @@ otherwise uses the value of `fortune-file'."
   "Compile fortune file.
 
 If called with a prefix asks for the FILE to compile, otherwise uses
-the value of `fortune-file'.  This can currently not handle directories."
+the value of `fortune-file'.  This currently cannot handle directories."
   (interactive 
     (list
      (if current-prefix-arg
@@ -267,7 +239,7 @@ the value of `fortune-file'.  This can currently not handle directories."
 		    (shell-command 
 		     (concat fortune-strfile fortune-strfile-options
 			     " " fortune-file fortune-quiet-strfile-options))))))
-	(t (error "Can't compile fortune file %s." fortune-file)))))
+	(t (error "Can't compile fortune file %s" fortune-file)))))
   
 	 
 ;;; **************
@@ -298,9 +270,9 @@ and choose the directory as the fortune-file."
 ;;; **************
 ;;; Display fortune
 (defun fortune-in-buffer (interactive &optional file)
-  "Puts a fortune cookie in the *fortune* buffer.
+  "Put a fortune cookie in the *fortune* buffer.
 
-When INTERACTIVE is nil, don't display it. Optional argument FILE,
+When INTERACTIVE is nil, don't display it.  Optional argument FILE,
 when supplied, specifies the file to choose the fortune from."
   (let ((fortune-buffer (or (get-buffer fortune-buffer-name)
 			    (generate-new-buffer fortune-buffer-name)))
@@ -339,8 +311,7 @@ and choose the directory as the fortune-file."
   (toggle-read-only 1))
 
 
-
-;;; provide ourselves
+;;; Provide ourselves.
 (provide 'fortune)
 
 ;;; fortune.el ends here
