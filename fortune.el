@@ -1,7 +1,7 @@
 ;;; -*- Mode: Emacs-Lisp -*- 
 ;;; fortune.el --- Use fortune to create signatures
 ;;; Revision: 1.0
-;;; $Id: $
+;;; $Id: fortune.el,v 1.1 1999-04-06 14:24:50+02 schauer Exp schauer $
 
 ;; Copyright (C) 1999 by Holger Schauer
 ;; Author: Holger Schauer <Holger.Schauer@gmx.de>
@@ -38,11 +38,11 @@
 
 ;; .. is easy as in most cases.  Add this file to where your
 ;; Emacs can find it and add
-;;(autoload 'fortune "fortunesig" nil t)
-;;(autoload 'fortune-add-fortune "fortunesig" nil t)
-;;(autoload 'fortune-from-region "fortunesig" nil t)
-;;(autoload 'fortune-compile "fortunesig" nil t)
-;;(autoload 'fortune-to-signature "fortunesig" nil t)
+;;(autoload 'fortune "fortune" nil t)
+;;(autoload 'fortune-add-fortune "fortune" nil t)
+;;(autoload 'fortune-from-region "fortune" nil t)
+;;(autoload 'fortune-compile "fortune" nil t)
+;;(autoload 'fortune-to-signature "fortune" nil t)
 ;; to your .emacs.
 ;; Please check the customize settings - you will at least have to modify the
 ;; values of `fortune-dir' and `fortune-file'.
