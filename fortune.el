@@ -57,7 +57,7 @@
 ;; which allows marking a region and then pressing "i" so that the marked 
 ;; region will be automatically added to my favourite fortune-file.
 
-;;; Revision: $Id: $
+;;; Revision: $Id: fortune.el,v 1.3 1999/11/19 13:56:34 schauer Exp $
 ;;; Code:
 
 ;;; **************
